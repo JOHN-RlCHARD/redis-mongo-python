@@ -5,7 +5,9 @@ import pymongo
 from pymongo import MongoClient
 
 # CONEXAO COM BD
-client = pymongo.MongoClient("mongodb+srv://joaoensenat:123abc@cluster0.3ijz94k.mongodb.net/?retryWrites=true&w=majority")
+print("User password: ")
+password = input()
+client = pymongo.MongoClient("mongodb+srv://joaoensenat:"+password+"@cluster0.3ijz94k.mongodb.net/?retryWrites=true&w=majority")
 db = client['redis']
 collection = db['students']
 
@@ -41,8 +43,8 @@ def generateRandomPerson():
     return randomPerson
 
 # INSERCAO DOS DADOS NO MONGO
-def insertData():
-    for i in range(5000):
+def insertData(qtd):
+    for i in range(qtd):
 
         newPerson = generateRandomPerson()
 
@@ -53,7 +55,7 @@ def insertData():
         "ano": newPerson.year
         })
 
-        print("Inserted: "+str(newPerson))
+        print("["+str(i+1)+"] Inserted: "+str(newPerson))
 
 # UNCOMMENT TO INSERT DATA IN MONGODB
-# insertData()
+insertData(1)

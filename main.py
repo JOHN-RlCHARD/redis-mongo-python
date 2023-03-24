@@ -3,6 +3,7 @@ import pandas as pd
 import json
 import pymongo
 from pymongo import MongoClient
+from redisconn import RedisConnection
 
 # CONEXAO COM BD
 print("User password: ")
@@ -10,6 +11,9 @@ password = input()
 client = pymongo.MongoClient("mongodb+srv://joaoensenat:"+password+"@cluster0.3ijz94k.mongodb.net/?retryWrites=true&w=majority")
 db = client['redis']
 collection = db['students']
+
+# CONEXAO REDIS
+redisconn = RedisConnection()
 
 # LEITURA DOS DADOS DO EXCEL
 data = pd.read_excel(r'C:\Users\jre10\OneDrive\Documentos\Codes\trabredis\dados.xlsx')
@@ -48,14 +52,50 @@ def insertData(qtd):
 
         newPerson = generateRandomPerson()
 
-        collection.insert_one({
-        "nome": newPerson.name,
-        "cpf": newPerson.cpf,
-        "curso_aprovado": newPerson.course,
-        "ano": newPerson.year
-        })
+        personjson = {
+            "nome": newPerson.name,
+            "cpf": newPerson.cpf,
+            "curso_aprovado": newPerson.course,
+            "ano": newPerson.year
+            }
+        y = json.dumps(personjson)
+        # INSERT IN MONGO
+        collection.insert_one(personjson)
+        # INSERT IN REDIS
+        redisconn.insert(y)
 
         print("["+str(i+1)+"] Inserted: "+str(newPerson))
 
+def removeData(cpf):
+    query = {
+        "cpf": str(cpf)
+    }
+    collection.delete_one(query)
+    redisconn.delete(str(cpf))
+
 # UNCOMMENT TO INSERT DATA IN MONGODB
-insertData(1)
+#insertData(1)
+
+removeData(35310192310)
+
+def main():
+    opt = "10"
+    while opt != "0":
+        print("\nType desired option:")
+        print("[1] - Insert data")
+        print("[2] - Delete data\n")
+        print("[0] - Quit")
+        opt = input()
+        match opt:
+            case "1":
+                print("Type number of random data to insert: ")
+                insertData(int(input()))
+            case "2":
+                print("Type cpf of the person to remove: ")
+                removeData(input())
+            case "0":
+                break
+            case _:
+                print("Invalid option.")
+
+main()

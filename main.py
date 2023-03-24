@@ -46,7 +46,7 @@ def generateRandomPerson():
         str(random.randint(2010,2023)))
     return randomPerson
 
-# INSERCAO DOS DADOS NO MONGO
+# INSERCAO DOS DADOS NO MONGO E REDIS
 def insertData(qtd):
     for i in range(qtd):
 
@@ -66,6 +66,7 @@ def insertData(qtd):
 
         print("["+str(i+1)+"] Inserted: "+str(newPerson))
 
+# REMOVER DADO NO MONGO E REDIS
 def removeData(cpf):
     query = {
         "cpf": str(cpf)
@@ -73,18 +74,42 @@ def removeData(cpf):
     collection.delete_one(query)
     redisconn.delete(str(cpf))
 
-# UNCOMMENT TO INSERT DATA IN MONGODB
-#insertData(1)
+# INSERIR 5000 DADOS APENAS NO MONGO
+def insert5000():
+    for i in range(5000):
+        newPerson = generateRandomPerson()
 
-removeData(35310192310)
+        personjson = {
+            "nome": newPerson.name,
+            "cpf": newPerson.cpf,
+            "curso_aprovado": newPerson.course,
+            "ano": newPerson.year
+            }
+        collection.insert_one(personjson)
+        print("["+str(i+1)+"] Inserted: "+str(newPerson))
+
+# ATUALIZAR TODOS OS DADOS DO MONGO PARA O REDIS
+def insertAllInRedis():
+    cursor = collection.find({})
+    for document in cursor:
+        personjson = {
+            "nome": document["nome"],
+            "cpf": document["cpf"],
+            "curso_aprovado": document["curso_aprovado"],
+            "ano": document["ano"]
+        }
+        jsonDoc = json.dumps(personjson)
+        redisconn.insert(jsonDoc)
 
 def main():
     opt = "10"
     while opt != "0":
         print("\nType desired option:")
-        print("[1] - Insert data")
-        print("[2] - Delete data\n")
-        print("[0] - Quit")
+        print("[1] - Insert data(Simultaneously in Mongo and Redis)")
+        print("[2] - Delete data(Simultaneously in Mongo and Redis)")
+        print("[3] - Insert 5000 only in Mongo")
+        print("[4] - Update all data in Redis")
+        print("[0] - Quit\n")
         opt = input()
         match opt:
             case "1":
@@ -93,6 +118,10 @@ def main():
             case "2":
                 print("Type cpf of the person to remove: ")
                 removeData(input())
+            case "3":
+                insert5000()
+            case "4":
+                insertAllInRedis()
             case "0":
                 break
             case _:
